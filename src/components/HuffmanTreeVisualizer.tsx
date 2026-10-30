@@ -4,16 +4,16 @@
  * 
  * COMPOSANT VISUALISEUR D'ARBRE DE HUFFMAN (SVG INTERACTIF)
  * 
- * Permet de visualiser la topologie exacte de l'arbre binaire de Huffman :
+ * Design sobre et naturel (type outil universitaire / ingénieur) :
  * - Poids des nœuds internes
- * - Feuilles avec les caractères et leurs fréquences
- * - Étiquettes '0' (branche gauche) et '1' (branche droite)
- * - Traçage interactif du chemin Racine -> Feuille lors de la sélection d'un caractère
+ * - Feuilles avec octets / caractères et fréquences
+ * - Branches étiquetées '0' (gauche) et '1' (droite)
+ * - Traçage net et lisible du chemin sélectionné (bleu sobre)
  */
 
 import React, { useState, useMemo, useRef } from "react";
 import { HuffmanNode, formatDisplayChar } from "../algorithms/huffman";
-import { ZoomIn, ZoomOut, RotateCcw, Compass, CheckCircle2 } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Compass } from "lucide-react";
 
 interface LayoutNode {
   node: HuffmanNode;
@@ -53,10 +53,9 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
     if (!root) return null;
 
     let leafIndex = 0;
-    const leafSpacing = 72; // Espacement horizontal entre feuilles consécutives
-    const levelHeight = 75; // Espacement vertical par niveau
+    const leafSpacing = 68;
+    const levelHeight = 72;
 
-    // Étape 1 : Affectation récursive de la profondeur et des relations
     function buildLayoutNode(
       node: HuffmanNode,
       depth: number,
@@ -65,12 +64,12 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
       accumulatedCode: string = ""
     ): LayoutNode {
       const code = branch ? accumulatedCode + branch : "";
-      const isLeaf = node.char !== null;
+      const isLeaf = node.char !== null || node.byte !== null;
 
       const layoutNode: LayoutNode = {
         node,
         x: 0,
-        y: depth * levelHeight + 40,
+        y: depth * levelHeight + 36,
         depth,
         isLeaf,
         char: node.char,
@@ -95,10 +94,9 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
 
     const layoutRoot = buildLayoutNode(root, 0, null, null, "");
 
-    // Étape 2 : Positionnement horizontal (Leaves gauche -> droite, parents centrés)
     function assignXCoordinates(node: LayoutNode) {
       if (node.isLeaf) {
-        node.x = leafIndex * leafSpacing + 60;
+        node.x = leafIndex * leafSpacing + 50;
         leafIndex++;
         return;
       }
@@ -117,7 +115,6 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
 
     assignXCoordinates(layoutRoot);
 
-    // Étape 3 : Calcul de la boîte englobante (bounding box)
     let minX = Infinity;
     let maxX = -Infinity;
     let maxY = 0;
@@ -133,8 +130,8 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
 
     findBounds(layoutRoot);
 
-    const width = Math.max(maxX - minX + 160, 600);
-    const height = maxY + 120;
+    const width = Math.max(maxX - minX + 140, 600);
+    const height = maxY + 100;
 
     return {
       root: layoutRoot,
@@ -145,7 +142,7 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
     };
   }, [root]);
 
-  // Ensemble des nœuds et arêtes appartenant au chemin vers le caractère sélectionné
+  // Chemin vers le nœud sélectionné
   const highlightedPath = useMemo(() => {
     if (!layout || !selectedChar) return { nodeIds: new Set<string>(), code: "" };
 
@@ -180,7 +177,7 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
     return { nodeIds, code: "" };
   }, [layout, selectedChar]);
 
-  // Gestion du Pan & Drag
+  // Pan & Drag
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
@@ -205,14 +202,14 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
 
   if (!layout) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-slate-500 border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
-        <Compass className="w-8 h-8 mb-2 text-slate-600" />
-        <p className="text-sm">Veuillez compresser un texte pour générer l'arbre binaire de Huffman.</p>
+      <div className="flex flex-col items-center justify-center p-12 text-zinc-500 border border-dashed border-zinc-800 rounded-xl bg-[#16181d]">
+        <Compass className="w-8 h-8 mb-2 text-zinc-600" />
+        <p className="text-xs">Veuillez compresser un fichier pour visualiser l'arbre binaire de Huffman.</p>
       </div>
     );
   }
 
-  // Rendu récursif des arêtes (liens)
+  // Rendu des arêtes
   const renderEdges = (node: LayoutNode): React.ReactNode[] => {
     const elements: React.ReactNode[] = [];
 
@@ -220,7 +217,6 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
       const isPathActive = highlightedPath.nodeIds.has(node.node.id) && highlightedPath.nodeIds.has(child.node.id);
       const edgeKey = `edge_${node.node.id}_to_${child.node.id}`;
 
-      // Courbe de Bézier douce entre parent et enfant
       const deltaY = child.y - node.y;
       const pathD = `M ${node.x} ${node.y} C ${node.x} ${node.y + deltaY * 0.5}, ${child.x} ${child.y - deltaY * 0.5}, ${child.x} ${child.y}`;
       const midX = (node.x + child.x) / 2;
@@ -231,27 +227,24 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
           <path
             d={pathD}
             fill="none"
-            stroke={isPathActive ? "#06b6d4" : "#334155"}
-            strokeWidth={isPathActive ? 3 : 1.5}
-            strokeDasharray={isPathActive ? undefined : undefined}
-            className="transition-colors duration-200"
+            stroke={isPathActive ? "#3b82f6" : "#27272a"}
+            strokeWidth={isPathActive ? 2.5 : 1.2}
           />
-          {/* Badge pour le bit '0' ou '1' */}
           <circle
             cx={midX}
             cy={midY}
-            r={10}
-            fill={isPathActive ? "#0e7490" : "#1e293b"}
-            stroke={isPathActive ? "#22d3ee" : "#475569"}
+            r={8.5}
+            fill={isPathActive ? "#1d4ed8" : "#18181b"}
+            stroke={isPathActive ? "#60a5fa" : "#3f3f46"}
             strokeWidth={1}
           />
           <text
             cx={midX}
             cy={midY}
             x={midX}
-            y={midY + 3.5}
+            y={midY + 3}
             textAnchor="middle"
-            className="text-[10px] font-mono font-bold fill-white pointer-events-none select-none"
+            className="text-[9px] font-mono font-medium fill-zinc-200 pointer-events-none select-none"
           >
             {branchLabel}
           </text>
@@ -271,14 +264,13 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
     return elements;
   };
 
-  // Rendu récursif des nœuds
+  // Rendu des nœuds
   const renderNodes = (node: LayoutNode): React.ReactNode[] => {
     const elements: React.ReactNode[] = [];
     const isSelected = selectedChar !== null && node.char === selectedChar;
     const isPathNode = highlightedPath.nodeIds.has(node.node.id);
 
     if (node.isLeaf) {
-      // Nœud feuille (Feuille = Caractère)
       elements.push(
         <g
           key={node.node.id}
@@ -286,49 +278,39 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
           className="cursor-pointer group"
           onClick={() => onSelectChar(isSelected ? null : node.char)}
         >
-          {/* Halo d'accentuation en cas de sélection */}
-          {(isSelected || isPathNode) && (
-            <circle
-              r={24}
-              fill="#06b6d4"
-              opacity={0.2}
-              className="animate-pulse"
-            />
-          )}
-
-          {/* Cercle principal de la feuille */}
+          {/* Cercle feuille */}
           <circle
-            r={18}
-            fill={isSelected ? "#0891b2" : isPathNode ? "#164e63" : "#0f172a"}
-            stroke={isSelected ? "#22d3ee" : isPathNode ? "#06b6d4" : "#38bdf8"}
-            strokeWidth={isSelected ? 2.5 : 1.5}
-            className="transition-all duration-200 group-hover:stroke-cyan-300"
+            r={16}
+            fill={isSelected ? "#2563eb" : isPathNode ? "#1e3a8a" : "#27272a"}
+            stroke={isSelected ? "#60a5fa" : isPathNode ? "#3b82f6" : "#3f3f46"}
+            strokeWidth={isSelected ? 2 : 1}
+            className="transition-colors group-hover:stroke-zinc-400"
           />
 
-          {/* Glyphe du caractère */}
+          {/* Caractère */}
           <text
             y={-1}
             textAnchor="middle"
             dominantBaseline="middle"
-            className={`text-xs font-mono font-bold pointer-events-none select-none ${
-              isSelected ? "fill-white" : "fill-cyan-100"
+            className={`text-[11px] font-mono font-semibold pointer-events-none select-none ${
+              isSelected ? "fill-white" : "fill-zinc-200"
             }`}
           >
-            {node.char === " " ? "⎵" : node.char === "\n" ? "↵" : node.char}
+            {node.char === " " ? "␣" : node.char === "\n" ? "↵" : node.char}
           </text>
 
-          {/* Fréquence sous le nœud */}
+          {/* Fréquence */}
           <text
-            y={30}
+            y={26}
             textAnchor="middle"
-            className="text-[10px] font-mono fill-slate-400 pointer-events-none select-none tabular-nums"
+            className="text-[9px] font-mono fill-zinc-500 pointer-events-none select-none tabular-nums"
           >
             n={node.frequency}
           </text>
         </g>
       );
     } else {
-      // Nœud interne (Somme des poids)
+      // Nœud interne
       elements.push(
         <g
           key={node.node.id}
@@ -336,17 +318,16 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
           className="cursor-default"
         >
           <circle
-            r={14}
-            fill={isPathNode ? "#1e293b" : "#090d16"}
-            stroke={isPathNode ? "#06b6d4" : "#475569"}
-            strokeWidth={isPathNode ? 2 : 1}
-            className="transition-colors duration-200"
+            r={13}
+            fill={isPathNode ? "#1e293b" : "#18181b"}
+            stroke={isPathNode ? "#3b82f6" : "#3f3f46"}
+            strokeWidth={isPathNode ? 1.5 : 1}
           />
           <text
             y={3}
             textAnchor="middle"
-            className={`text-[10px] font-mono font-semibold pointer-events-none select-none tabular-nums ${
-              isPathNode ? "fill-cyan-200 font-bold" : "fill-slate-300"
+            className={`text-[9px] font-mono font-medium pointer-events-none select-none tabular-nums ${
+              isPathNode ? "fill-blue-200" : "fill-zinc-400"
             }`}
           >
             {node.frequency}
@@ -362,66 +343,65 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
   };
 
   return (
-    <div className="relative border border-slate-800 rounded-xl bg-slate-900/60 overflow-hidden flex flex-col">
-      {/* Barre d'outils et commandes de visualisation */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800 bg-slate-950/70 text-xs">
+    <div className="border border-zinc-800 rounded-xl bg-[#16181d] overflow-hidden flex flex-col">
+      {/* Barre d'outils */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-[#121316] text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-200">Arbre Binaire de Huffman</span>
-          <span className="text-slate-500">·</span>
-          <span className="text-slate-400">
+          <span className="font-medium text-zinc-300">Arbre Binaire de Huffman</span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-zinc-400">
             {selectedChar ? (
-              <span className="text-cyan-400 font-mono">
+              <span className="text-blue-400 font-mono">
                 Chemin pour "{formatDisplayChar(selectedChar)}" :{" "}
-                <span className="font-bold text-white tracking-widest">{highlightedPath.code}</span>
+                <span className="font-semibold text-white tracking-widest">{highlightedPath.code}</span>
               </span>
             ) : (
-              "Cliquez sur un nœud ou une ligne du tableau pour surligner le chemin"
+              "Sélectionnez un caractère dans la table pour tracer son chemin"
             )}
           </span>
         </div>
 
-        {/* Boutons de zoom et recentrage */}
         <div className="flex items-center gap-1">
           {selectedChar && (
             <button
               onClick={() => onSelectChar(null)}
-              className="px-2 py-1 text-[11px] text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors mr-2"
+              className="px-2 py-0.5 text-[11px] text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition-colors mr-2 cursor-pointer"
             >
               Effacer la sélection
             </button>
           )}
           <button
             onClick={() => setZoom((z) => Math.min(z + 0.15, 2.5))}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors"
+            className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
             title="Zoom avant"
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(z - 0.15, 0.4))}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors"
+            className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
             title="Zoom arrière"
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleResetView}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors"
-            title="Réinitialiser l'affichage"
+            className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+            title="Réinitialiser"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Zone de dessin SVG interactive (avec Pan & Zoom) */}
+      {/* Surface SVG */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className="w-full h-[460px] overflow-hidden cursor-grab active:cursor-grabbing bg-radial from-slate-900 to-slate-950 relative"
+        className="w-full h-[440px] overflow-hidden cursor-grab active:cursor-grabbing bg-[#121316] relative"
       >
         <svg
           width="100%"
@@ -431,30 +411,28 @@ export const HuffmanTreeVisualizer: React.FC<HuffmanTreeVisualizerProps> = ({
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: "top center",
-            transition: isDragging ? "none" : "transform 0.15s ease-out",
+            transition: isDragging ? "none" : "transform 0.1s ease-out",
           }}
         >
-          {/* Lignes / Arêtes */}
           <g className="edges-layer">{renderEdges(layout.root)}</g>
-          {/* Nœuds */}
           <g className="nodes-layer">{renderNodes(layout.root)}</g>
         </svg>
 
-        {/* Légende discrète en bas de l'arbre */}
-        <div className="absolute bottom-3 left-4 flex items-center gap-4 text-[11px] text-slate-400 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800/80 backdrop-blur-sm pointer-events-none">
+        {/* Légende discrète */}
+        <div className="absolute bottom-3 left-4 flex items-center gap-4 text-[10px] text-zinc-400 bg-zinc-900/90 px-3 py-1.5 rounded-md border border-zinc-800 pointer-events-none">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-600 inline-block" />
-            <span>Nœud interne (poids cumulé)</span>
+            <span className="w-2 h-2 rounded-full bg-zinc-800 border border-zinc-600 inline-block" />
+            <span>Nœud interne (somme des poids)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-900 border border-cyan-400 inline-block" />
-            <span>Feuille (caractère terminal)</span>
+            <span className="w-2 h-2 rounded-full bg-zinc-700 border border-zinc-400 inline-block" />
+            <span>Feuille (caractère / octet)</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="px-1 font-mono font-bold text-cyan-300 bg-cyan-950 border border-cyan-800 rounded text-[9px]">0</span>
-            <span>Gauche</span>
-            <span className="px-1 font-mono font-bold text-cyan-300 bg-cyan-950 border border-cyan-800 rounded text-[9px] ml-1">1</span>
-            <span>Droite</span>
+          <div className="flex items-center gap-1">
+            <span className="font-mono text-zinc-300 font-semibold">0</span>
+            <span>= gauche,</span>
+            <span className="font-mono text-zinc-300 font-semibold ml-0.5">1</span>
+            <span>= droite</span>
           </div>
         </div>
       </div>

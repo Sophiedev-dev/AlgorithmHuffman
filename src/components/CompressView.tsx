@@ -4,11 +4,11 @@
  * 
  * VUE DE COMPRESSION UNIVERSELLE (COMPRESS VIEW)
  * 
- * Supporte TOUS LES FORMATS DE FICHIERS :
- * - Documents : PDF (.pdf), Word (.docx), Excel (.xlsx), etc.
- * - Médias : Images (.png, .jpg, .webp, .svg), etc.
- * - Textes & Code : .txt, .md, .json, .csv, code source, etc.
- * - Saisie libre de texte dans le champ d'édition.
+ * Design sobre, épuré et naturel (style outil logiciel de bureau) :
+ * - Aucune surcharge de néon ou dégradés artificiels
+ * - Drag & Drop fluide pour tout type de fichier
+ * - Saisie directe de texte
+ * - Analyse complète et instantanée
  */
 
 import React, { useState, useRef } from "react";
@@ -26,15 +26,10 @@ import {
   FileText,
   Play,
   RotateCcw,
-  Sparkles,
-  Layers,
   Table as TableIcon,
   GitFork,
   Binary,
   AlertCircle,
-  FileSpreadsheet,
-  FileBox,
-  Image as ImageIcon,
   CheckCircle2,
 } from "lucide-react";
 
@@ -56,25 +51,13 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper pour afficher une icône adaptée selon l'extension
+  // Helper pour afficher le type de fichier sans fioritures
   const getFileBadge = (name: string) => {
-    const ext = name.split(".").pop()?.toLowerCase();
-    if (ext === "pdf") {
-      return { label: "Document PDF", color: "text-red-400 bg-red-950/60 border-red-800" };
-    }
-    if (ext === "xlsx" || ext === "xls" || ext === "csv") {
-      return { label: "Tableur Excel / CSV", color: "text-emerald-400 bg-emerald-950/60 border-emerald-800" };
-    }
-    if (ext === "docx" || ext === "doc") {
-      return { label: "Document Word", color: "text-blue-400 bg-blue-950/60 border-blue-800" };
-    }
-    if (["png", "jpg", "jpeg", "webp", "svg", "gif", "bmp"].includes(ext || "")) {
-      return { label: "Image Bitmap / Vectoriel", color: "text-amber-400 bg-amber-950/60 border-amber-800" };
-    }
-    return { label: "Fichier Données / Texte", color: "text-cyan-400 bg-cyan-950/60 border-cyan-800" };
+    const ext = name.split(".").pop()?.toUpperCase() || "BIN";
+    return ext;
   };
 
-  // Traitement d'un fichier binaire ou texte (via FileReader ArrayBuffer)
+  // Traitement d'un fichier (via FileReader ArrayBuffer)
   const processFile = (file: File) => {
     if (!file) return;
 
@@ -92,7 +75,7 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
 
         setLoadedFileBytes(bytes);
 
-        // Détection si c'est du texte lisible pour l'afficher dans le textarea
+        // Détection si c'est du texte lisible
         const isTextFile =
           file.type.startsWith("text/") ||
           file.name.match(/\.(txt|md|json|csv|py|c|cpp|js|ts|html|css|xml|log)$/i);
@@ -108,11 +91,11 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
           setInputText(
             `[Fichier binaire importé : ${file.name}\nTaille : ${bytes.length.toLocaleString("fr-FR")} octets\nType MIME : ${
               file.type || "application/octet-stream"
-            }\nL'algorithme de Huffman va traiter l'intégralité du flux d'octets 0-255]`
+            }]`
           );
         }
 
-        // Compression instantanée du flux binaire universel
+        // Compression du flux binaire
         const result = compressUniversal(bytes, file.name, file.type || "application/octet-stream");
         setCompressionResult(result);
         setSelectedChar(null);
@@ -129,7 +112,6 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
       setIsProcessing(false);
     };
 
-    // Lecture universelle sous forme d'ArrayBuffer brut (fonctionne pour PDF, DOCX, XLSX, Images, etc.)
     reader.readAsArrayBuffer(file);
   };
 
@@ -158,7 +140,7 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
     }
   };
 
-  // Compression manuelle (si saisie dans le textarea)
+  // Déclencher la compression
   const handleRunCompression = () => {
     setErrorMessage(null);
     if (!inputText.trim() && !loadedFileBytes) {
@@ -168,14 +150,12 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
 
     try {
       setIsProcessing(true);
-      // Si un fichier binaire est déjà chargé et que le texte n'a pas été modifié
       if (loadedFileBytes && inputText.startsWith("[Fichier binaire importé :")) {
         const result = compressUniversal(loadedFileBytes, filename || "document.bin", fileMime);
         setCompressionResult(result);
         setSelectedChar(null);
         if (onCompressionSuccess) onCompressionSuccess(result);
       } else {
-        // Traiter le texte saisi
         const result = compressUniversal(inputText, filename || "document.txt", "text/plain");
         setCompressionResult(result);
         setSelectedChar(null);
@@ -202,19 +182,19 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
 
   return (
     <div className="space-y-6">
-      {/* Zone Supérieure : Import Universel & Saisie */}
+      {/* Zone Supérieure : Import & Saisie */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Colonne Gauche : Drag & Drop Universel (PDF, DOCX, XLSX, Images, Texte) */}
+        {/* Colonne Gauche : Drag & Drop */}
         <div className="lg:col-span-5 flex flex-col justify-between">
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`h-full min-h-[240px] border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center ${
+            className={`h-full min-h-[220px] border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center ${
               isDragging
-                ? "border-cyan-400 bg-cyan-950/30 scale-[1.01]"
-                : "border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/60"
+                ? "border-blue-500 bg-blue-950/20"
+                : "border-zinc-800 bg-[#16181d] hover:border-zinc-700"
             }`}
           >
             <input
@@ -224,56 +204,47 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
               accept="*/*"
               className="hidden"
             />
-            <div className="w-14 h-14 mx-auto rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-cyan-400 mb-3">
-              <UploadCloud className="w-7 h-7" />
+            <div className="w-12 h-12 mx-auto rounded-lg bg-zinc-800/80 border border-zinc-700 flex items-center justify-center text-zinc-300 mb-3">
+              <UploadCloud className="w-6 h-6" />
             </div>
-            <h4 className="text-sm font-semibold text-slate-200">
-              Glissez-déposez n'importe quel fichier
+            <h4 className="text-sm font-medium text-zinc-200">
+              Glissez-déposez votre fichier ici
             </h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              Prend en charge les <strong className="text-slate-300">PDF, Word (.docx), Excel (.xlsx), Images (PNG/JPG), et fichiers texte</strong>
+            <p className="text-xs text-zinc-400 mt-1 max-w-xs">
+              PDF, Word (.docx), Excel (.xlsx), Images (PNG/JPG), ou texte
             </p>
 
-            {/* Badges de types de formats pris en charge */}
-            <div className="flex flex-wrap gap-1.5 justify-center mt-3 text-[10px] font-mono">
-              <span className="px-2 py-0.5 rounded bg-red-950/50 text-red-300 border border-red-900/60">.PDF</span>
-              <span className="px-2 py-0.5 rounded bg-blue-950/50 text-blue-300 border border-blue-900/60">.DOCX</span>
-              <span className="px-2 py-0.5 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-900/60">.XLSX</span>
-              <span className="px-2 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-900/60">IMAGES</span>
-              <span className="px-2 py-0.5 rounded bg-cyan-950/50 text-cyan-300 border border-cyan-900/60">.TXT / CODE</span>
-            </div>
-
-            <div className="text-[11px] text-slate-500 mt-4 font-mono">
+            <div className="text-[11px] text-zinc-400 mt-4 font-mono">
               {filename ? (
-                <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="flex items-center gap-1.5 text-zinc-200 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                   <span>{filename}</span>
-                  <span className="text-slate-500">({currentSizeBytes.toLocaleString("fr-FR")} octets)</span>
+                  <span className="text-zinc-500">({currentSizeBytes.toLocaleString("fr-FR")} octets)</span>
                 </div>
               ) : (
-                <span>Cliquez pour parcourir vos dossiers</span>
+                <span className="text-zinc-500">Cliquez pour parcourir vos fichiers</span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Colonne Droite : Textarea de saisie ou aperçu du fichier */}
-        <div className="lg:col-span-7 flex flex-col justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/40">
+        {/* Colonne Droite : Textarea de saisie ou aperçu */}
+        <div className="lg:col-span-7 flex flex-col justify-between p-4 rounded-xl border border-zinc-800 bg-[#16181d]">
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-semibold text-slate-200">
-                  {filename ? `Fichier : ${filename}` : "Saisie de texte direct"}
+                <FileText className="w-4 h-4 text-zinc-400" />
+                <span className="text-xs font-medium text-zinc-200">
+                  {filename ? `Fichier : ${filename}` : "Saisie de texte"}
                 </span>
                 {filename && (
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${getFileBadge(filename).color}`}>
-                    {getFileBadge(filename).label}
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                    {getFileBadge(filename)}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-400 font-mono tabular-nums">
-                <span>{currentSizeBytes.toLocaleString("fr-FR")} octets</span>
+              <div className="text-xs text-zinc-400 font-mono tabular-nums">
+                {currentSizeBytes.toLocaleString("fr-FR")} octets
               </div>
             </div>
 
@@ -281,26 +252,26 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
               value={inputText}
               onChange={(e) => {
                 setInputText(e.target.value);
-                setLoadedFileBytes(null); // réinitialiser le binaire si le texte est modifié
+                setLoadedFileBytes(null);
               }}
               placeholder="Collez ou saisissez votre texte ici, ou déposez un fichier (PDF, Word, Excel, image, code) dans la zone de gauche..."
               rows={8}
-              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 transition-colors leading-relaxed resize-y"
+              className="w-full p-3 bg-[#111215] border border-zinc-800 rounded-lg text-xs font-mono text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors leading-relaxed resize-y"
             />
           </div>
 
           {errorMessage && (
-            <div className="mt-3 p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
+            <div className="mt-3 p-3 rounded-lg bg-red-950/30 border border-red-900/60 text-red-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* Boutons d'action */}
-          <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-800/80">
+          {/* Boutons d'action sobres */}
+          <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-zinc-800/80">
             <button
               onClick={handleReset}
-              className="px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Effacer</span>
@@ -309,41 +280,41 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
             <button
               onClick={handleRunCompression}
               disabled={isProcessing}
-              className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold text-xs rounded-lg transition-all shadow-lg shadow-cyan-950/40 flex items-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isProcessing ? "Traitement..." : "Compresser avec Huffman"}</span>
+              <Play className="w-3 h-3 fill-current" />
+              <span>{isProcessing ? "Compression en cours..." : "Compresser"}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Zone Inférieure : Résultats & Visualisations dynamiques */}
+      {/* Zone Inférieure : Résultats */}
       {compressionResult && (
         <div className="space-y-5 pt-2">
-          {/* Section Statistiques de gain d'espace */}
+          {/* Statistiques épurées */}
           <StatsSummary result={compressionResult} />
 
-          {/* Barre d'onglets pour naviguer entre les vues pédagogiques */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div className="flex items-center gap-1 p-1 bg-slate-900/90 rounded-lg border border-slate-800">
+          {/* Onglets d'inspection */}
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <div className="flex items-center gap-1 p-1 bg-zinc-900 rounded-lg border border-zinc-800">
               <button
                 onClick={() => setActiveTab("table")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                   activeTab === "table"
-                    ? "bg-slate-800 text-cyan-300 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-zinc-800 text-white shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 <TableIcon className="w-3.5 h-3.5" />
-                <span>Table des Fréquences & Octets</span>
+                <span>Table des Fréquences</span>
               </button>
               <button
                 onClick={() => setActiveTab("tree")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                   activeTab === "tree"
-                    ? "bg-slate-800 text-cyan-300 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-zinc-800 text-white shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 <GitFork className="w-3.5 h-3.5" />
@@ -351,18 +322,18 @@ export const CompressView: React.FC<CompressViewProps> = ({ onCompressionSuccess
               </button>
               <button
                 onClick={() => setActiveTab("bitstream")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                   activeTab === "bitstream"
-                    ? "bg-slate-800 text-cyan-300 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-zinc-800 text-white shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 <Binary className="w-3.5 h-3.5" />
-                <span>Flux Binaire Compacté</span>
+                <span>Flux Binaire</span>
               </button>
             </div>
 
-            <div className="text-xs text-slate-500 hidden sm:block font-mono">
+            <div className="text-xs text-zinc-500 hidden sm:block font-mono">
               Calculé en {compressionResult.executionTimeMs} ms
             </div>
           </div>
