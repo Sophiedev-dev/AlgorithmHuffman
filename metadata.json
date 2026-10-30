@@ -1,0 +1,6 @@
+{
+  "name": "Huffman Studio",
+  "description": "Application pédagogique moderne de compression et décompression de texte par l'algorithme de Huffman.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
